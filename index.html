@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Inbox Puzzles — Sudoku 9×9</title>
+<style>
+  :root{
+    --teal:#1f9dbf;
+    --gold:#f5b041;
+    --bg:#faf9f6;
+    --card:#fff;
+  }
+  html,body{
+    margin:0;padding:0;
+    background:var(--bg);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    display:flex;justify-content:center;align-items:flex-start;
+    min-height:100vh;box-sizing:border-box;
+  }
+
+  .container{
+    width:100%;
+    max-width:620px;
+    margin:0.6em;
+    background:var(--card);
+    border-radius:12px;
+    padding:0.9em;
+    box-shadow:0 3px 10px rgba(0,0,0,0.05);
+    box-sizing:border-box;
+  }
+
+  .title{
+    text-align:center;color:var(--teal);
+    font-size:clamp(1.1rem,4vw,1.45rem);
+    margin:0 0 0.2rem 0;font-weight:700;
+  }
+  .tag{
+    text-align:center;color:#666;margin:0 0 0.8rem 0;font-style:italic;
+    font-size:clamp(0.85rem,3vw,1rem);
+  }
+
+  /* Sudoku grid */
+  .grid-wrap{ display:flex; justify-content:center; }
+  .sudoku-grid{
+    display:grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: clamp(6px, 1.6vw, 10px);
+    width: min(100%, 560px);
+    padding: 0.4rem;
+    box-sizing:border-box;
+  }
+
+  .cell {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+
+  /* square sizing */
+  .cell input, .cell .given {
+    width: clamp(36px, 8.6vw, 48px);
+    height: clamp(36px, 8.6vw, 48px);
+    font-size: clamp(16px, 4.2vw, 20px);
+    line-height:1;
+    text-align:center;
+    box-sizing:border-box;
+    border-radius:8px;
+    border:1.3px solid #ccc;
+    font-family:monospace;
+    font-weight:700;
+    -webkit-appearance: none;
+  }
+
+  .cell .given {
+    background:#f2f7f7;
+    color:#0b3b3b;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+
+  .cell input:focus{
+    outline:none;border-color:var(--teal); background:#e8f8fb;
+  }
+
+  /* Heavier borders to emphasize 3x3 boxes */
+  .sudoku-grid > .cell:nth-child(3n) { /* right border of box */
+    margin-right:0;
+  }
+
+  .sudoku-grid {
+    border-radius:8px;
+  }
+  /* draw thick grid lines by using box-shadow on cells at edges of 3x3 boxes */
+  .sudoku-grid > .cell {
+    position:relative;
+  }
+  /* thick right borders */
+  .sudoku-grid > .cell:nth-child(3n) .cell-border,
+  .sudoku-grid > .cell:nth-child(3n) { }
+  /* We'll draw using pseudo lines on container */
+  .sudoku-grid::before, .sudoku-grid::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+  /* draw vertical thicker lines */
+  .sudoku-grid {
+    position: relative;
+  }
+  .sudoku-grid::before {
+    content: "";
+    position: absolute;
+    left: calc(33.3333% - 1px);
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: #d0d0d0;
+    transform-origin: center;
+  }
+  .sudoku-grid::after {
+    content: "";
+    position: absolute;
+    left: calc(66.6666% - 1px);
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: #d0d0d0;
+  }
+  /* horizontal lines using extra pseudo elements on wrapper */
+  .grid-wrap::before, .grid-wrap::after{
+    content:"";position:absolute;pointer-events:none;
+  }
+  .grid-wrap{
+    position:relative;
+    padding-bottom: 0.4rem;
+  }
+  .grid-wrap::before{
+    content:""; position:absolute; top: calc(33.3333% - 1px); left: 6px; right:6px; height:2px; background:#d0d0d0;
+  }
+  .grid-wrap::after{
+    content:""; position:absolute; top: calc(66.6666% - 1px); left: 6px; right:6px; height:2px; background:#d0d0d0;
+  }
+
+  .controls{ text-align:center; margin-top:0.9rem; }
+  .controls button{
+    padding:9px 14px; border-radius:8px; border:none; cursor:pointer;
+    background:var(--gold); color:#222; font-weight:700; font-size:clamp(14px,3vw,15px);
+  }
+  .controls button:hover{ background:#d9951f; color:#fff; }
+
+  /* responsive tightening for very small phones */
+  @media (max-width:420px){
+    .puzzle-container{ padding:0.8em; }
+    .sudoku-grid{ gap:8px; width:min(100%, 460px); }
+  }
+</style>
+</head>
+<body>
+  <main class="container" role="main" aria-label="Sudoku puzzle">
+    <h1 class="title">Daily Sudoku — 9×9</h1>
+    <p class="tag">Type the missing digits (1–9). Progress saves automatically.</p>
+
+    <div class="grid-wrap">
+      <div id="sudoku" class="sudoku-grid" aria-live="polite"></div>
+    </div>
+
+    <div class="controls">
+      <button id="clearBtn" aria-label="Clear my answers">🔄 Clear My Answers</button>
+    </div>
+  </main>
+
+<script>
+(function(){
+  // ----- CONFIG -----
+  // Starting puzzle (0 = blank). This matches the puzzle you asked.
+  const puzzle = [
+    [0,0,0,0,5,1,4,0,3],
+    [0,3,4,8,9,0,0,0,6],
+    [0,0,2,6,0,3,0,1,8],
+    [0,0,3,1,0,0,0,0,0],
+    [8,6,0,3,2,0,0,0,1],
+    [0,0,1,7,0,0,0,0,0],
+    [3,0,8,9,7,2,5,6,0],
+    [5,2,7,4,3,0,0,0,9],
+    [0,9,0,0,0,8,3,2,7]
+  ];
+
+  const STORAGE_KEY = "sudoku-9x9-progress-v1";
+  const CLEAR_FLAG = "sudoku-9x9-cleared-v1";
+  const gridEl = document.getElementById('sudoku');
+  const clearBtn = document.getElementById('clearBtn');
+
+  // cookie helpers
+  function setCookie(name,value,days){
+    const d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000));
+    document.cookie = name+"="+encodeURIComponent(value)+";expires="+d.toUTCString()+";path=/";
+  }
+  function getCookie(name){
+    const match = document.cookie.match(new RegExp('(^|; )'+name+'=([^;]*)'));
+    return match ? decodeURIComponent(match[2]) : "";
+  }
+
+  // load saved entries (unless cleared cookie present)
+  const isCleared = getCookie(CLEAR_FLAG) === "true";
+  let saved = {};
+  try {
+    if(!isCleared){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) saved = JSON.parse(raw);
+    }
+  } catch(e){ saved = {}; }
+
+  // helper to id cell by r,c
+  function idFor(r,c){ return `${r}-${c}`; }
+
+  // build grid
+  const inputs = [];
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      const cellWrap = document.createElement('div');
+      cellWrap.className = 'cell';
+
+      const val = puzzle[r][c];
+      if(val === 0){
+        const inp = document.createElement('input');
+        inp.setAttribute('inputmode','numeric');
+        inp.setAttribute('pattern','[1-9]');
+        inp.setAttribute('maxlength','1');
+        inp.setAttribute('aria-label', `Row ${r+1} column ${c+1}`);
+        inp.dataset.pos = idFor(r,c);
+        // restore saved if any
+        const savedKey = idFor(r,c);
+        if(saved && saved[savedKey]) inp.value = saved[savedKey];
+
+        // validation & autosave
+        inp.addEventListener('input', (e) => {
+          const v = e.target.value.replace(/[^1-9]/g,'').slice(0,1);
+          e.target.value = v;
+          // update saved and localStorage
+          if(v){
+            saved[savedKey] = v;
+          } else {
+            delete saved[savedKey];
+          }
+          try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); }catch(err){}
+          // reset cleared cookie so next reload restores
+          setCookie(CLEAR_FLAG, "false", 7);
+        });
+
+        // prevent non-digit paste
+        inp.addEventListener('paste', (ev) => {
+          ev.preventDefault();
+          const txt = (ev.clipboardData || window.clipboardData).getData('text') || '';
+          const digit = txt.replace(/[^1-9]/g,'').slice(0,1);
+          if(digit) inp.value = digit, inp.dispatchEvent(new Event('input'));
+        });
+
+        cellWrap.appendChild(inp);
+        inputs.push({r,c,el:inp});
+      } else {
+        const span = document.createElement('div');
+        span.className = 'given';
+        span.textContent = val;
+        span.setAttribute('aria-hidden','true');
+        cellWrap.appendChild(span);
+      }
+      gridEl.appendChild(cellWrap);
+    }
+  }
+
+  // Clear answers -> remove localStorage keys and set cookie so cleared stays across iframe reloads
+  clearBtn.addEventListener('click', () => {
+    // clear visible inputs
+    inputs.forEach(item => item.el.value = '');
+    // remove saved state
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+    // set cleared cookie
+    setCookie(CLEAR_FLAG, "true", 7);
+  });
+
+  // Accessibility: focus first empty cell on load
+  setTimeout(() => {
+    const first = inputs.find(i => !i.el.value);
+    if(first) try{ first.el.focus(); }catch(e){}
+  }, 200);
+
+  // Small extra: ensure container scales nicely inside tight iframes
+  // (This only gently nudges; layout is responsive already)
+  function adjustScale(){
+    const wrap = document.querySelector('.container');
+    if(!wrap) return;
+    const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+    // if viewport very narrow, reduce padding slightly
+    if(vw < 360) wrap.style.padding = '0.6em';
+    else wrap.style.padding = '';
+  }
+  window.addEventListener('resize', adjustScale);
+  adjustScale();
+
+})();
+</script>
+</body>
+</html>
