@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Inbox Puzzles — Daily Sudoku (Final)</title>
+<style>
+  :root {
+    --teal: #1f9dbf;
+    --gold: #f5b041;
+    --bg: #faf9f6;
+    --card: #ffffff;
+    --error: #ffcccc;
+    --beige-shade: #faf7f2;
+    --thin: #ddd;
+    --medium: #bbb;
+  }
+
+  html,body{
+    margin:0;padding:0;
+    background:var(--bg);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    display:flex;justify-content:center;align-items:flex-start;
+    min-height:100vh;box-sizing:border-box;
+  }
+
+  .container{
+    width:100%;max-width:620px;margin:0.6em;
+    background:var(--card);border-radius:12px;padding:0.9em;
+    box-shadow:0 3px 10px rgba(0,0,0,0.05);box-sizing:border-box;
+  }
+
+  .title{ text-align:center;color:var(--teal);font-size:clamp(1.1rem,4vw,1.45rem);margin:0 0 0.1rem 0;font-weight:700; }
+  .instructions{ text-align:center;color:#666;margin:0 0 0.6rem 0;font-style:italic;font-size:clamp(0.9rem,3vw,1rem); }
+
+  .grid-wrap{ display:flex;justify-content:center;width:100%;overflow:hidden; }
+  .sudoku-grid{
+    display:grid;
+    grid-template-columns:repeat(9,1fr);
+    width:min(95vw,560px);
+    max-width:560px;
+    box-sizing:border-box;
+  }
+
+  .cell{
+    position:relative;
+    aspect-ratio:1/1;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--thin);
+    box-sizing:border-box;
+    background:var(--card);
+  }
+
+  /* shaded 3x3 boxes */
+  .cell.shaded{ background: var(--beige-shade); }
+  .cell.shaded .given { background: var(--beige-shade); }
+
+  .cell input, .cell .given{
+    width:92%; height:92%;
+    font-size:clamp(16px,4vw,20px);
+    text-align:center; border-radius:6px; border:1px solid #ccc;
+    font-family:monospace; font-weight:700; box-sizing:border-box;
+    background: transparent;
+  }
+
+  .cell .given{
+    /* givens get a subtle surface on top of shaded background */
+    background: rgba(242,247,247,0.9);
+    color:#0b3b3b; display:flex;align-items:center;justify-content:center; pointer-events:none;
+  }
+
+  .cell input:focus{ outline:none; border-color:var(--teal); background:#e8f8fb; }
+
+  /* conflict visuals for inputs and givens */
+  .cell input.conflict{ background:var(--error) !important; border-color:#d00 !important; color:#800; }
+  .cell .given.conflict{ background:var(--error) !important; border:1px solid #d00 !important; color:#800; }
+
+  .status{ text-align:center;margin-top:0.4rem;color:#444;font-size:0.95rem; }
+  .controls{ text-align:center;margin-top:0.9rem; }
+  .controls button{ padding:9px 14px;border-radius:8px;border:none;cursor:pointer;background:var(--gold);color:#222;font-weight:700;font-size:clamp(14px,3vw,15px); }
+  .controls button:hover{ background:#d9951f;color:#fff; }
+
+  /* Responsive tweak */
+  @media (max-width:420px){ .container{ padding:0.7em; } }
+</style>
+</head>
+<body>
+  <main class="container" role="main" aria-label="Sudoku puzzle">
+    <h1 class="title">Daily Sudoku — 9×9</h1>
+    <div class="instructions">Each number 1–9 must appear once per row, column, and box. Watch for red conflicts! Progress saves automatically.</div>
+
+    <div class="grid-wrap">
+      <div id="sudoku" class="sudoku-grid" aria-live="polite"></div>
+    </div>
+
+    <div class="status" id="status">Conflicts: 0</div>
+
+    <div class="controls">
+      <button id="clearBtn" aria-label="Clear my answers">🔄 Clear My Answers</button>
+    </div>
+  </main>
+
+<script>
+(function(){
+  // puzzle (0 = blank)
+  const puzzle = [
+    [0,0,0,0,5,1,4,0,3],
+    [0,3,4,8,9,0,0,0,6],
+    [0,0,2,6,0,3,0,1,8],
+    [0,0,3,1,0,0,0,0,0],
+    [8,6,0,3,2,0,0,0,1],
+    [0,0,1,7,0,0,0,0,0],
+    [3,0,8,9,7,2,5,6,0],
+    [5,2,7,4,3,0,0,0,9],
+    [0,9,0,0,0,8,3,2,7]
+  ];
+
+  const STORAGE_KEY = "sudoku9-progress-final";
+  const CLEAR_FLAG = "sudoku9-cleared-final";
+  const gridEl = document.getElementById('sudoku');
+  const clearBtn = document.getElementById('clearBtn');
+  const statusEl = document.getElementById('status');
+
+  // cookie helpers
+  function setCookie(name,value,days){
+    const d=new Date(); d.setTime(d.getTime()+(days*24*60*60*1000));
+    document.cookie = name+"="+encodeURIComponent(value)+";expires="+d.toUTCString()+";path=/";
+  }
+  function getCookie(name){
+    const m=document.cookie.match(new RegExp('(^|; )'+name+'=([^;]*)'));
+    return m?decodeURIComponent(m[2]):"";
+  }
+
+  const isCleared = getCookie(CLEAR_FLAG) === "true";
+  let saved = {};
+  try {
+    if(!isCleared){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) saved = JSON.parse(raw);
+    }
+  } catch(e){ saved = {}; }
+
+  // cells structure: store reference to container cell element and either input or given element inside
+  const cells = Array.from({length:9}, ()=>Array(9).fill(null));
+
+  function idFor(r,c){ return `${r}-${c}`; }
+
+  // build grid; shade alternating boxes and add thicker 3x3 borders via inline styles
+  for(let r=0;r<9;r++){
+    for(let c=0;c<9;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      // shade alternating boxes (beige-tinted)
+      const boxRow = Math.floor(r/3), boxCol = Math.floor(c/3);
+      if ((boxRow + boxCol) % 2 === 0) cell.classList.add('shaded');
+
+      // add thicker borders on box boundaries using inline styles (reliable across browsers)
+      if (c % 3 === 0) cell.style.borderLeft = `2px solid ${getComputedStyle(document.documentElement).getPropertyValue('--medium') || '#bbb'}`;
+      if (c === 8) cell.style.borderRight = `2px solid ${getComputedStyle(document.documentElement).getPropertyValue('--medium') || '#bbb'}`;
+      if (r % 3 === 0) cell.style.borderTop = `2px solid ${getComputedStyle(document.documentElement).getPropertyValue('--medium') || '#bbb'}`;
+      if (r === 8) cell.style.borderBottom = `2px solid ${getComputedStyle(document.documentElement).getPropertyValue('--medium') || '#bbb'}`;
+
+      const val = puzzle[r][c];
+      if (val === 0){
+        const inp = document.createElement('input');
+        inp.inputMode = 'numeric';
+        inp.pattern = '[1-9]';
+        inp.maxLength = 1;
+        inp.setAttribute('aria-label', `Row ${r+1} column ${c+1}`);
+        const key = idFor(r,c);
+        if (saved && saved[key]) inp.value = saved[key];
+
+        inp.addEventListener('input', (e) => {
+          const v = e.target.value.replace(/[^1-9]/g,'').slice(0,1);
+          e.target.value = v;
+          if (v) saved[key] = v; else delete saved[key];
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saved)); } catch (err) {}
+          setCookie(CLEAR_FLAG, "false", 7);
+          validateAndMark();
+        });
+
+        inp.addEventListener('paste', (ev) => {
+          ev.preventDefault();
+          const txt = (ev.clipboardData || window.clipboardData).getData('text') || '';
+          const d = txt.replace(/[^1-9]/g,'').slice(0,1);
+          if (d){ inp.value = d; inp.dispatchEvent(new Event('input')); }
+        });
+
+        cell.appendChild(inp);
+        cells[r][c] = { container: cell, input: inp, given: null, givenValue: 0 };
+      } else {
+        const div = document.createElement('div');
+        div.className = 'given';
+        div.textContent = val;
+        div.setAttribute('aria-hidden','true');
+        // ensure given sits above shaded background visibly
+        div.style.background = 'rgba(242,247,247,0.95)';
+        cell.appendChild(div);
+        cells[r][c] = { container: cell, input: null, given: div, givenValue: val };
+      }
+
+      gridEl.appendChild(cell);
+    }
+  }
+
+  // Clear button behavior: clear inputs, localStorage, and set cleared cookie
+  clearBtn.addEventListener('click', () => {
+    for (let r=0;r<9;r++){
+      for (let c=0;c<9;c++){
+        const slot = cells[r][c];
+        if (slot && slot.input) slot.input.value = '';
+      }
+    }
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+    setCookie(CLEAR_FLAG, "true", 7);
+    validateAndMark();
+  });
+
+  // Validation: mark both entered & prefilled conflicting cells
+  function validateAndMark(){
+    // clear all conflict visuals first (inputs & givens)
+    for (let r=0;r<9;r++){
+      for (let c=0;c<9;c++){
+        const slot = cells[r][c];
+        if (!slot) continue;
+        if (slot.input){
+          slot.input.classList.remove('conflict');
+          slot.input.style.background = '';
+          slot.input.style.borderColor = '';
+          slot.input.style.color = '';
+        }
+        if (slot.given){
+          slot.given.classList.remove('conflict');
+          slot.given.style.background = '';
+          slot.given.style.border = '';
+          slot.given.style.color = '';
+        }
+      }
+    }
+
+    // build numeric grid (givens + inputs)
+    const grid = Array.from({length:9}, ()=>Array(9).fill(0));
+    for (let r=0;r<9;r++){
+      for (let c=0;c<9;c++){
+        const slot = cells[r][c];
+        if (slot.given) grid[r][c] = parseInt(slot.givenValue, 10) || 0;
+        else if (slot.input && slot.input.value) grid[r][c] = parseInt(slot.input.value, 10) || 0;
+      }
+    }
+
+    let conflictCount = 0;
+
+    function markCell(r,c){
+      const slot = cells[r][c];
+      if (!slot) return;
+      // if input exists, mark it; if not, mark the given div
+      if (slot.input){
+        if (!slot.input.classList.contains('conflict')) {
+          slot.input.classList.add('conflict');
+          slot.input.style.background = 'var(--error)';
+          slot.input.style.borderColor = '#d00';
+          slot.input.style.color = '#800';
+          conflictCount++;
+        }
+      } else if (slot.given){
+        if (!slot.given.classList.contains('conflict')){
+          slot.given.classList.add('conflict');
+          slot.given.style.background = 'var(--error)';
+          slot.given.style.border = '1px solid #d00';
+          slot.given.style.color = '#800';
+          conflictCount++;
+        }
+      }
+    }
+
+    // row duplicates
+    for (let r=0;r<9;r++){
+      const seen = {};
+      for (let c=0;c<9;c++){
+        const v = grid[r][c];
+        if (!v) continue;
+        if (seen[v] === undefined) seen[v] = c;
+        else {
+          markCell(r,c);
+          markCell(r,seen[v]);
+        }
+      }
+    }
+
+    // column duplicates
+    for (let c=0;c<9;c++){
+      const seen = {};
+      for (let r=0;r<9;r++){
+        const v = grid[r][c];
+        if (!v) continue;
+        if (seen[v] === undefined) seen[v] = r;
+        else {
+          markCell(r,c);
+          markCell(seen[v],c);
+        }
+      }
+    }
+
+    // box duplicates
+    for (let br=0;br<3;br++){
+      for (let bc=0;bc<3;bc++){
+        const seen = {};
+        for (let r=br*3;r<br*3+3;r++){
+          for (let c=bc*3;c<bc*3+3;c++){
+            const v = grid[r][c];
+            if (!v) continue;
+            if (seen[v] === undefined) seen[v] = [r,c];
+            else {
+              markCell(r,c);
+              const [rr,cc] = seen[v];
+              markCell(rr,cc);
+            }
+          }
+        }
+      }
+    }
+
+    statusEl.textContent = `Conflicts: ${conflictCount}`;
+  }
+
+  // initial validate (in case saved state conflicts)
+  setTimeout(validateAndMark, 120);
+
+  // expose for debugging if needed
+  window.__sudoku_validate_final = validateAndMark;
+})();
+</script>
+</body>
+</html>
