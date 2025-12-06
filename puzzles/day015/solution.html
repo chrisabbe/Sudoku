@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Daily Sudoku – Solution</title>
+
+<style>
+:root{
+  --teal:#008080;
+  --teal-dark:#006a6a;
+  --bg:#f5f6f7;
+  --panel:#ffffff;
+  --ink:#1e1e1e;
+  --line:#ddd;
+  --box:#faf7f2;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+
+header{
+  background:var(--teal);
+  color:#fff;
+  padding:14px 8px;
+  text-align:center;
+  border-bottom:3px solid var(--teal-dark);
+}
+
+header h1{
+  margin:0;
+  font-size:22px;
+}
+
+header h2{
+  margin:4px 0 0;
+  font-size:15px;
+}
+
+.wrap{
+  max-width:620px;
+  margin:10px auto;
+  padding:10px;
+}
+
+.panel{
+  background:var(--panel);
+  border-radius:14px;
+  padding:12px;
+}
+
+.sudoku-grid{
+  display:grid;
+  grid-template-columns:repeat(9,1fr);
+}
+
+.cell{
+  aspect-ratio:1/1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid var(--line);
+  font-weight:700;
+  font-family:monospace;
+  font-size:clamp(16px,4vw,20px);
+}
+
+.cell.shaded{ background:var(--box); }
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Daily Sudoku — Solution</h1>
+  <h2>9x9</h2>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div id="solution" class="sudoku-grid"></div>
+  </div>
+</div>
+
+<script>
+/* ========= CONFIG ========= */
+const SOLUTION_STRING = "937528469125469837486731952672843591895172643314695278548986213261354978759217384";
+
+/* ========= DO NOT EDIT BELOW ========= */
+
+const grid=document.getElementById("solution");
+
+const nums=SOLUTION_STRING.split("").map(n=>+n);
+
+for(let i=0;i<81;i++){
+  const cell=document.createElement("div");
+  cell.className="cell";
+
+  const r=Math.floor(i/9), c=i%9;
+  if((Math.floor(r/3)+Math.floor(c/3))%2===0) cell.classList.add("shaded");
+
+  cell.textContent=nums[i];
+  grid.appendChild(cell);
+}
+</script>
+
+</body>
+</html>
