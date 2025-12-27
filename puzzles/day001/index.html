@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Inbox Puzzles — Daily Puzzle</title>
+
+<style>
+:root{
+  --teal:#008080;
+  --teal-dark:#006a6a;
+  --gold:#d8c178;
+  --bg:#f5f6f7;
+  --panel:#ffffff;
+  --ink:#1e1e1e;
+  --muted:#6b6b6b;
+}
+
+/* ===== PAGE FRAME ===== */
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--ink);
+}
+
+/* ===== SITE HEADER ===== */
+.site-header{
+  background:#ffffff;
+  border-bottom:2px solid #e6e6e6;
+}
+
+.site-header .inner{
+  max-width:980px;
+  margin:0 auto;
+  padding:10px 14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.site-header img.logo{
+  height:44px;
+  width:auto;
+}
+
+.brand-block{
+  display:flex;
+  flex-direction:column;
+  line-height:1.1;
+}
+
+.brand-title{
+  font-size:20px;
+  font-weight:800;
+  color:#0b3b3b;
+}
+
+.tagline{
+  font-size:12px;
+  color:#555;
+}
+
+.site-nav{ margin-left:auto; }
+.site-nav a{
+  font-size:13px;
+  font-weight:600;
+  color:#006a6a;
+  text-decoration:none;
+}
+.site-nav a:hover{ text-decoration:underline; }
+
+/* ===== CONTENT WRAPPER ===== */
+.content-wrap{
+  max-width:900px;
+  margin:18px auto 26px;
+  padding:0 10px;
+}
+
+/* ===== PUZZLE AREA (drop-in container) ===== */
+.puzzle-area{
+  background:transparent;
+}
+
+/* ===== FOOTER ===== */
+footer{
+  background:#ffffff;
+  border-top:2px solid #e6e6e6;
+}
+footer .inner{
+  max-width:980px;
+  margin:0 auto;
+  padding:12px 14px;
+  font-size:12px;
+  color:#444;
+}
+.footer-top{
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.footer-links a{
+  color:#006a6a;
+  text-decoration:none;
+  margin-right:10px;
+}
+.footer-links a:hover{ text-decoration:underline; }
+.credit{
+  margin-top:6px;
+  color:#666;
+  font-size:12px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== BRAND HEADER ===== -->
+<div class="site-header">
+  <div class="inner">
+    <img class="logo" src="/assets/inbox-puzzles-logo.png" alt="Inbox Puzzles logo"/>
+
+    <div class="brand-block">
+      <div class="brand-title">Inbox Puzzles</div>
+      <div class="tagline">Smart, relaxing puzzles — delivered daily.</div>
+    </div>
+
+    <div class="site-nav">
+      <a href="/about.html">About</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="content-wrap">
+
+  <!-- 🔽 PLACE EACH PUZZLE’S HTML HERE -->
+  <main class="puzzle-area">
+
+    <!-- Example: your Sudoku content goes here -->
+    <!-- Keep the puzzle CSS+JS below this block -->
+
+  </main>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div class="inner">
+
+    <div class="footer-top">
+      <div>Inbox Puzzles ©️ 2026 — All rights reserved</div>
+
+      <div class="footer-links">
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+      </div>
+    </div>
+
+    <div class="credit">
+      Created by Chris Abbe — future space for “Abbe Ventures” + website link
+    </div>
+
+  </div>
+</footer>
+
+</body>
+</html>
