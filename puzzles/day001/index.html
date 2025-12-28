@@ -151,6 +151,49 @@ body{
 
     <!-- 🔻 PLACE YOUR PUZZLE HTML HERE -->
     <!-- (grid, scripts, controls, etc.) -->
+<!-- PUZZLE CONTENT ONLY (no extra <html> / <head> / <body>) -->
+
+<div class="wrap">
+  <div class="subtitle">
+    Each number 1–9 appears once per row, column, and box. 
+    Watch for red conflicts! Progress saves automatically.
+  </div>
+
+  <div class="diff easy">Easy</div>
+
+  <div class="panel">
+    <div class="grid-wrap">
+      <div id="sudoku" class="sudoku-grid"></div>
+    </div>
+    <div id="status" class="status">Conflicts: 0</div>
+  </div>
+
+  <div class="controls">
+    <button id="clearBtn">Clear My Answers</button>
+  </div>
+</div>
+
+<script>
+/* ========= CONFIG (ONLY EDIT THIS) ========= */
+const PUZZLE_STRING =
+"000051403" +
+"034890006" +
+"002603018" +
+"003100000" +
+"860320001" +
+"001700000" +
+"308972560" +
+"527430009" +
+"090008327";
+
+/* Difficulty */
+const DIFFICULTY = "Easy";
+const DIFFCLASS = "easy";
+
+/* ========= DO NOT EDIT BELOW ========= */
+...
+<!-- keep your existing sudoku script exactly as-is -->
+</script>
 
   </div>
 </main>
