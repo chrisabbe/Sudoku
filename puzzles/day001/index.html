@@ -16,7 +16,28 @@
   margin:10px auto;
   padding:10px;
 }
+/* Teal puzzle header bar */
+.puzzle-header{
+ background:var(--teal);
+ color:#fff;
+ padding:14px 8px;
+ text-align:center;
+ border-bottom:3px solid var(--teal-dark);
+ border-radius:10px;
+ margin-bottom:10px;
+}
 
+.puzzle-header h1{
+ margin:0;
+ font-size:22px;
+ letter-spacing:.4px;
+}
+
+.puzzle-header h2{
+ margin:4px 0 0;
+ font-size:15px;
+ font-weight:600;
+}
 .subtitle{
   text-align:center;
   color:var(--muted);
@@ -135,6 +156,11 @@
 
     <!-- 🔻 PUZZLE CONTENT ONLY (no extra <html>/<head>/<body>) -->
     <div class="wrap">
+      <!-- Teal puzzle header INSIDE the panel -->
+     <header class="puzzle-header">
+       <h1>Daily Sudoku</h1>
+       <h2>9×9</h2>
+     </header>
       <div class="subtitle">
         Each number 1–9 appears once per row, column, and box.
         Watch for red conflicts! Progress saves automatically.
