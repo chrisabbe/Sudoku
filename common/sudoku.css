@@ -9,7 +9,7 @@
 /* Teal puzzle header bar */
 .puzzle-header{
   background:var(--teal);
-  color:#fff;
+  color:#ffff;
   padding:14px 8px;
   text-align:center;
   border-bottom:3px solid var(--teal-dark);
