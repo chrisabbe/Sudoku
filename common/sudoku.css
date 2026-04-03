@@ -134,3 +134,12 @@
   padding:10px 16px;
   font-weight:700;
 }
+.day-label{
+  text-align:center;
+  font-size:13px;
+  color:#ffffff; /* ← change THIS */
+  margin:6px 0 2px;
+  font-weight:700;
+  letter-spacing:.4px;
+  opacity:0.9; /* optional: softens it slightly */
+}
